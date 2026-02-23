@@ -1,7 +1,27 @@
 export type TaskStatus = "pendente" | "em-andamento" | "concluida" | "atrasada";
 export type TaskPriority = "alta" | "media" | "baixa";
 export type FileType = "pauta" | "resumo" | "ata" | "outro";
-export type RevendedorStatus = "Ativo" | "Inativo" | "Novo Lead" | "Em Negociação";
+export type RevendedorStatus = "Ativo" | "Inativo" | "Novo Lead" | "Em Negociação" | "Recorrente";
+export type RevendedorCanal = "Instagram" | "WhatsApp" | "Indicação" | "Outros";
+export type InteracaoTipo = "WhatsApp" | "Ligação" | "Reunião" | "Email" | "Visita" | "Outro";
+
+export interface Interacao {
+  id: string;
+  data: string;
+  tipo: InteracaoTipo;
+  descricao: string;
+  autor: string;
+}
+
+export interface ProximaAcao {
+  data: string;
+  descricao: string;
+}
+
+export interface VolumeHistorico {
+  mes: string;
+  volume: number;
+}
 
 export interface TaskAttachment {
   name: string;
@@ -59,11 +79,20 @@ export interface Revendedor {
   nome: string;
   responsavel: string;
   status: RevendedorStatus;
-  canal: string;
+  canal: RevendedorCanal;
   cidade: string;
   volume: number;
   ultima: string;
   obs: string;
+  whatsapp: string;
+  instagram: string;
+  email: string;
+  telefone: string;
+  tags: string[];
+  score: number;
+  proximaAcao: ProximaAcao | null;
+  volumeHistorico: VolumeHistorico[];
+  historico: Interacao[];
 }
 
 export interface BusinessKPIs {
@@ -138,6 +167,18 @@ export const REVENDEDOR_STATUS_COLORS: Record<RevendedorStatus, string> = {
   "Inativo": "#6B7280",
   "Novo Lead": "#3B82F6",
   "Em Negociação": "#F59E0B",
+  "Recorrente": "#8B5CF6",
+};
+
+export const PIPELINE_STAGES: RevendedorStatus[] = ["Novo Lead", "Em Negociação", "Ativo", "Recorrente"];
+
+export const INTERACAO_ICONS: Record<InteracaoTipo, string> = {
+  "WhatsApp": "📱",
+  "Ligação": "📞",
+  "Reunião": "🤝",
+  "Email": "✉️",
+  "Visita": "🏃",
+  "Outro": "📌",
 };
 
 export const APP_PASSWORD = "Mrlion@2026";
