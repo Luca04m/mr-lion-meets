@@ -5,7 +5,7 @@ import { Task, TaskStatus, TEAM_MEMBERS, STATUS_LABELS, STATUS_COLORS, Revendedo
 import { format, formatDistanceToNow, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { TrendingUp, BarChart2, DollarSign, Package, Download, CheckCircle2, AlertTriangle, Clock, Zap, Calendar, Building2 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -38,17 +38,6 @@ const ECOM_CARDS = [
   { label: "Taxa de Devolução", value: "11,5%", badge: "Atenção", badgeColor: "#F59E0B", tip: "R$ 8.278 em devoluções no mês" },
 ];
 
-const PRODUCT_TABLE = [
-  { produto: "Blended", itens: 320, pctVol: "51,7%", receita: 33921, cmv: 19010, margem: "44,0%", status: "✅ Saudável", critical: false },
-  { produto: "Honey", itens: 259, pctVol: "41,8%", receita: 32091, cmv: 20196, margem: "37,1%", status: "✅ Saudável", critical: false },
-  { produto: "Cappuccino", itens: 50, pctVol: "8,1%", receita: 5497, cmv: 11588, margem: "-110,7%", status: "🚨 Crítico", critical: true },
-];
-
-const PRODUCT_CHART = [
-  { name: "Blended", receita: 33921, cmv: 19010 },
-  { name: "Honey", receita: 32091, cmv: 20196 },
-  { name: "Cappuccino", receita: 5497, cmv: 11588 },
-];
 
 const OverviewPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -178,61 +167,14 @@ const OverviewPage = () => {
           ))}
         </div>
 
-        {/* Product table */}
-        <div className="bg-card rounded-lg border border-border overflow-x-auto mb-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-[10px] uppercase text-muted-foreground tracking-wider">
-                <th className="px-3 py-2.5 text-left">Produto</th>
-                <th className="px-3 py-2.5 text-right">Itens</th>
-                <th className="px-3 py-2.5 text-right">% Vol</th>
-                <th className="px-3 py-2.5 text-right">Receita</th>
-                <th className="px-3 py-2.5 text-right">CMV</th>
-                <th className="px-3 py-2.5 text-right">Margem</th>
-                <th className="px-3 py-2.5 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PRODUCT_TABLE.map(p => (
-                <tr key={p.produto} className={`border-b border-border/50 ${p.critical ? "bg-red-500/5" : ""}`}>
-                  <td className="px-3 py-2.5 font-medium">{p.produto}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{p.itens}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">{p.pctVol}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">R$ {p.receita.toLocaleString("pt-BR")}</td>
-                  <td className="px-3 py-2.5 text-right font-mono">R$ {p.cmv.toLocaleString("pt-BR")}</td>
-                  <td className="px-3 py-2.5 text-right font-mono" style={{ color: p.critical ? "#EF4444" : "#22C55E" }}>{p.margem}</td>
-                  <td className="px-3 py-2.5 text-right">
-                    <span className="text-xs">{p.status}</span>
-                    {p.critical && <Badge variant="destructive" className="text-[8px] ml-1">⚠ CMV &gt; Receita</Badge>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
 
-
-        {/* Receita vs CMV chart */}
-        <div className="bg-card rounded-lg border border-border p-4">
-          <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Receita vs CMV por Produto</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={PRODUCT_CHART}>
-              <XAxis dataKey="name" tick={{ fill: "hsl(240 8% 55%)", fontSize: 11 }} />
-              <YAxis tick={{ fill: "hsl(240 8% 55%)", fontSize: 10 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <RTooltip contentStyle={{ background: "hsl(240 20% 9%)", border: "1px solid hsl(240 18% 14%)", borderRadius: 6, color: "hsl(240 20% 92%)" }} formatter={(val: number) => `R$ ${val.toLocaleString("pt-BR")}`} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="receita" name="Receita" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="cmv" name="CMV" fill="#EF4444" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
       </div>
 
 
       {/* ═══ BLOCO B — CRM ═══ */}
       <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold">Revendedores</h2>
+          <h2 className="text-sm font-semibold">CRM</h2>
           <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => navigate("/revendedores")}>Ver todos</Button>
         </div>
         <div className="grid md:grid-cols-2 gap-4">

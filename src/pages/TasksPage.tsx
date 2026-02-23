@@ -39,7 +39,7 @@ const TasksPage = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [sidePanelTask, setSidePanelTask] = useState<Task | null>(null);
   const [highlightId, setHighlightId] = useState<number | null>(null);
-  const [activeTab, setActiveTab] = useState("lista");
+  const [activeTab, setActiveTab] = useState("minhas");
   const userName = getUser() || "";
   const [searchParams] = useSearchParams();
 
@@ -192,8 +192,8 @@ const TasksPage = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-secondary/40 flex-wrap h-auto gap-1">
-          <TabsTrigger value="lista" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Lista</TabsTrigger>
           <TabsTrigger value="minhas" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Minhas Tarefas</TabsTrigger>
+          <TabsTrigger value="lista" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Lista</TabsTrigger>
           <TabsTrigger value="kanban" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Kanban</TabsTrigger>
           <TabsTrigger value="pessoa" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Por Pessoa</TabsTrigger>
           <TabsTrigger value="area" className="data-[state=active]:bg-accent data-[state=active]:text-gold text-xs">Por Área</TabsTrigger>
