@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, CheckSquare, FileText, Building2,
-  LogOut, Menu, X
+  LogOut, Menu, X, Search
 } from "lucide-react";
 import { getUser, clearUser, getOnlineUsers, updatePresence, getTasks } from "@/lib/store";
 import { useNavigate } from "react-router-dom";
@@ -15,14 +15,14 @@ const NAV_ITEMS = [
   { to: "/overview", icon: LayoutDashboard, label: "Visão Geral" },
   { to: "/tasks", icon: CheckSquare, label: "Tarefas", badge: true },
   { to: "/meetings", icon: FileText, label: "Reuniões" },
-  { to: "/revendedores", icon: Building2, label: "Revendedores" },
+  { to: "/revendedores", icon: Building2, label: "CRM" },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
   "/overview": "Visão Geral",
   "/tasks": "Tarefas",
   "/meetings": "Reuniões",
-  "/revendedores": "Revendedores",
+  "/revendedores": "CRM",
 };
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -146,7 +146,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background grid-pattern">
-      <aside className="hidden md:flex w-60 flex-col fixed inset-y-0 left-0 bg-sidebar-background border-r border-sidebar-border z-40">{sidebarContent}</aside>
+      <aside className="hidden md:flex w-60 flex-col fixed inset-y-0 left-0 bg-sidebar-background border-r border-sidebar-border z-40 overflow-y-auto">{sidebarContent}</aside>
 
       <div className="md:hidden fixed top-0 inset-x-0 h-12 bg-card/90 backdrop-blur-sm border-b border-border z-50 flex items-center px-4">
         <button onClick={() => setMobileOpen(true)} className="p-1"><Menu className="w-5 h-5 text-foreground" /></button>
@@ -157,7 +157,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {mobileOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 md:hidden" onClick={() => setMobileOpen(false)} />
-            <motion.aside initial={{ x: -240 }} animate={{ x: 0 }} exit={{ x: -240 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="fixed inset-y-0 left-0 w-60 bg-sidebar-background border-r border-sidebar-border z-50 flex flex-col md:hidden">
+            <motion.aside initial={{ x: -240 }} animate={{ x: 0 }} exit={{ x: -240 }} transition={{ type: "spring", damping: 25, stiffness: 300 }} className="fixed inset-y-0 left-0 w-60 bg-sidebar-background border-r border-sidebar-border z-[60] flex flex-col md:hidden overflow-y-auto">
               <button onClick={() => setMobileOpen(false)} className="absolute top-3 right-3 p-1 text-muted-foreground"><X className="w-4 h-4" /></button>
               {sidebarContent}
             </motion.aside>

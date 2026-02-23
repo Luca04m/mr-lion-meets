@@ -104,6 +104,8 @@ const SEED_MEETINGS: Meeting[] = [
   { id: 9001, title: "Daily Mr. Lion", meetingDate: "2026-02-24", fileType: "pauta", fileName: "", fileUrl: "", uploadedBy: "Luca", notes: "Alinhamento diário de tarefas e pendências da operação", createdAt: now(), hora: "09:30", tipo: "Recorrente", participantes: ["Luca", "João", "Luhan", "Pedro", "Guilherme"], local: "Google Meet", meetingStatus: "Agendada" },
   { id: 9002, title: "Review de Distribuição — Fevereiro", meetingDate: "2026-02-25", fileType: "resumo", fileName: "", fileUrl: "", uploadedBy: "Luca", notes: "Análise de volume por revendedor, metas de março, ações de ativação", createdAt: now(), hora: "14:00", tipo: "Mensal", participantes: ["Luca", "João", "Pedro"], local: "Escritório SP", meetingStatus: "Agendada" },
   { id: 9003, title: "Briefing Campanha Março", meetingDate: "2026-02-26", fileType: "pauta", fileName: "", fileUrl: "", uploadedBy: "Luca", notes: "Definição de criativo, peças e cronograma de conteúdo para março", createdAt: now(), hora: "11:00", tipo: "Pontual", participantes: ["Luca", "Luhan", "Guilherme"], local: "Google Meet", meetingStatus: "Agendada" },
+  { id: 9004, title: "Reunião Estratégica Mr. Lion — 13/02", meetingDate: "2026-02-13", fileType: "resumo", fileName: "", fileUrl: "", uploadedBy: "Luca", notes: "Alinhamento estratégico completo. 10 decisões tomadas: Kit Carnaval R$299, migração Nuvemshop prioridade máxima, Nation antes do Orochi, press-kits entregues em mãos no Rio, RTD validar em BH e lançar em Dezembro, rebranding com garrafa nova. 75 min, 13 tópicos cobertos.", createdAt: now(), hora: "14:00", tipo: "Mensal", participantes: ["Luca", "João", "Luhan", "Pedro", "Guilherme"], local: "Google Meet", meetingStatus: "Realizada" },
+  { id: 9005, title: "Reunião Estratégica Mr. Lion — 19/02", meetingDate: "2026-02-19", fileType: "resumo", fileName: "", fileUrl: "", uploadedBy: "Luca", notes: "10 decisões: Nuvemshop go-live 25/02, Delivery lança antes do Nation (meta 27/02), Nation piloto primeiro com 1 pessoa, soft launch 50 vagas (final de Abril), ranking público em pontos, Marketplaces até 27/02, Dia do Consumidor semana de desconto, Reunião Vinícius sobre CRM, João faz amostras RTD, Kit PDV aprovado em 5 níveis.", createdAt: now(), hora: "15:34", tipo: "Mensal", participantes: ["Luca", "João", "Luhan", "Pedro", "Guilherme"], local: "Google Meet", meetingStatus: "Realizada" },
 ];
 
 function initIfNeeded() {
@@ -112,8 +114,9 @@ function initIfNeeded() {
     localStorage.setItem(ACTIVITY_KEY, JSON.stringify([]));
     localStorage.setItem(NEXT_ID_KEY, "31000");
   }
-  if (!localStorage.getItem(MEETINGS_KEY)) {
+  if (!localStorage.getItem(MEETINGS_KEY) || localStorage.getItem("meetings_reset_v2") !== "1") {
     localStorage.setItem(MEETINGS_KEY, JSON.stringify(SEED_MEETINGS));
+    localStorage.setItem("meetings_reset_v2", "1");
   } else {
     // Migrate meetings to add new fields
     try {
