@@ -222,9 +222,9 @@ function initIfNeeded() {
       if (filtered.length !== existing.length || migrated) localStorage.setItem(MEETINGS_KEY, JSON.stringify(filtered));
     } catch {}
   }
-  if (!localStorage.getItem(CRM_KEY) || localStorage.getItem("crm_reset_v4") !== "1") {
+  if (!localStorage.getItem(CRM_KEY) || localStorage.getItem("crm_reset_v5") !== "1") {
     localStorage.setItem(CRM_KEY, JSON.stringify(SEED_REVENDEDORES));
-    localStorage.setItem("crm_reset_v4", "1");
+    localStorage.setItem("crm_reset_v5", "1");
   } else {
     // Migrate existing revendedores to add new fields
     try {
