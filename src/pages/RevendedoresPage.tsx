@@ -20,6 +20,7 @@ import {
   List, Columns3, BarChart3, Phone, Mail, Instagram, MessageCircle,
   X, Calendar, ChevronLeft, ChevronRight, AlertTriangle, ArrowUpDown,
   ExternalLink, Check, Filter, Trophy, TrendingDown, Eye,
+  Download, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, formatDistanceToNow, differenceInDays, parseISO } from "date-fns";
@@ -33,6 +34,7 @@ import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import { useSortable, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
+import * as XLSX from "xlsx";
 
 const CANAIS: RevendedorCanal[] = ["WhatsApp", "Instagram", "Indicação", "Outros"];
 const ALL_STATUSES: RevendedorStatus[] = ["Novo Lead", "Em Negociação", "Ativo", "Recorrente", "Inativo"];
@@ -185,13 +187,94 @@ const RevendedoresPage = () => {
   };
 
   const handleExportCSV = () => {
-    const rows = filtered.filter(r => selectedIds.has(r.id));
-    const header = "Nome,Responsável,Status,Canal,Cidade,Volume,Score,Última Atividade\n";
-    const csv = header + rows.map(r => `"${r.nome}","${r.responsavel}","${r.status}","${r.canal}","${r.cidade}",${r.volume},${r.score},"${r.ultima}"`).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const rows = selectedIds.size > 0 ? filtered.filter(r => selectedIds.has(r.id)) : filtered;
+    const header = "Nome,Responsável,Status,Canal,Cidade,Volume,Score,WhatsApp,Instagram,Email,Telefone,Tags,Observações,Última Atividade\n";
+    const csv = header + rows.map(r =>
+      `"${r.nome}","${r.responsavel}","${r.status}","${r.canal}","${r.cidade}",${r.volume},${r.score},"${r.whatsapp}","${r.instagram}","${r.email}","${r.telefone}","${(r.tags || []).join("; ")}","${r.obs}","${r.ultima}"`
+    ).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "revendedores.csv"; a.click();
-    toast.success("CSV exportado");
+    const a = document.createElement("a"); a.href = url; a.download = "crm_revendedores.csv"; a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${rows.length} revendedor(es) exportado(s)`);
+  };
+
+  const handleExportXLSX = () => {
+    const rows = selectedIds.size > 0 ? filtered.filter(r => selectedIds.has(r.id)) : filtered;
+    const data = rows.map(r => ({
+      Nome: r.nome,
+      Responsável: r.responsavel,
+      Status: r.status,
+      Canal: r.canal,
+      Cidade: r.cidade,
+      Volume: r.volume,
+      Score: r.score,
+      WhatsApp: r.whatsapp,
+      Instagram: r.instagram,
+      Email: r.email,
+      Telefone: r.telefone,
+      Tags: (r.tags || []).join("; "),
+      Observações: r.obs,
+      "Última Atividade": r.ultima,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    // Auto-size columns
+    const colWidths = Object.keys(data[0] || {}).map(k => ({
+      wch: Math.max(k.length, ...data.map(d => String((d as any)[k] || "").length).slice(0, 50)) + 2
+    }));
+    ws["!cols"] = colWidths;
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "CRM");
+    XLSX.writeFile(wb, "crm_revendedores.xlsx");
+    toast.success(`${rows.length} revendedor(es) exportado(s) para Excel`);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows: any[] = XLSX.utils.sheet_to_json(ws);
+        let count = 0;
+        rows.forEach(row => {
+          const nome = row["Nome"] || row["nome"] || row["NOME"] || "";
+          if (!nome) return;
+          const newRev: Omit<Revendedor, "id"> = {
+            nome,
+            responsavel: row["Responsável"] || row["responsavel"] || row["Responsavel"] || "Pedro",
+            status: (row["Status"] || row["status"] || "Novo Lead") as RevendedorStatus,
+            canal: (row["Canal"] || row["canal"] || "WhatsApp") as RevendedorCanal,
+            cidade: row["Cidade"] || row["cidade"] || "",
+            volume: Number(row["Volume"] || row["volume"] || 0),
+            score: 0,
+            whatsapp: String(row["WhatsApp"] || row["whatsapp"] || row["Whatsapp"] || ""),
+            instagram: row["Instagram"] || row["instagram"] || "",
+            email: row["Email"] || row["email"] || "",
+            telefone: String(row["Telefone"] || row["telefone"] || row["WhatsApp"] || row["whatsapp"] || ""),
+            tags: (row["Tags"] || row["tags"] || "").toString().split(/[;,]/).map((t: string) => t.trim()).filter(Boolean),
+            obs: row["Observações"] || row["obs"] || row["Obs"] || "",
+            ultima: row["Última Atividade"] || row["ultima"] || format(new Date(), "yyyy-MM-dd"),
+            proximaAcao: null,
+            volumeHistorico: [],
+            historico: [],
+          };
+          newRev.score = calcScore(newRev);
+          createRevendedor(newRev);
+          count++;
+        });
+        toast.success(`${count} revendedor(es) importado(s)`);
+        reload();
+      } catch (err) {
+        toast.error("Erro ao importar arquivo. Verifique o formato.");
+        console.error(err);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = "";
   };
 
   // Pipeline drag
@@ -229,9 +312,20 @@ const RevendedoresPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h1 className="text-xl font-bold">CRM — Revendedores</h1>
-        <Button onClick={() => { setNewDialogPreStatus(undefined); setNewDialogOpen(true); }} className="gradient-gold text-primary-foreground font-semibold glow-pulse self-start" size="sm">
-          <Plus className="w-4 h-4 mr-1" /> Novo Revendedor
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={handleExportXLSX} className="text-xs">
+            <Download className="w-3.5 h-3.5 mr-1" /> Exportar
+          </Button>
+          <label>
+            <input type="file" accept=".xlsx,.xls,.csv" onChange={handleImportFile} className="hidden" />
+            <Button variant="outline" size="sm" asChild className="text-xs cursor-pointer">
+              <span><Upload className="w-3.5 h-3.5 mr-1" /> Importar</span>
+            </Button>
+          </label>
+          <Button onClick={() => { setNewDialogPreStatus(undefined); setNewDialogOpen(true); }} className="gradient-gold text-primary-foreground font-semibold glow-pulse" size="sm">
+            <Plus className="w-4 h-4 mr-1" /> Novo Revendedor
+          </Button>
+        </div>
       </div>
 
       {/* Stats Bar */}
