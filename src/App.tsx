@@ -8,6 +8,7 @@ import OverviewPage from "./pages/OverviewPage";
 import TasksPage from "./pages/TasksPage";
 import MeetingsPage from "./pages/MeetingsPage";
 import RevendedoresPage from "./pages/RevendedoresPage";
+import ContentPage from "./pages/ContentPage";
 import NotFound from "./pages/NotFound";
 import { AppLayout } from "./components/layout/AppLayout";
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/tasks" element={<ProtectedPage><TasksPage /></ProtectedPage>} />
           <Route path="/meetings" element={<ProtectedPage><MeetingsPage /></ProtectedPage>} />
           <Route path="/revendedores" element={<ProtectedPage><RevendedoresPage /></ProtectedPage>} />
+          <Route path="/content" element={<ProtectedPage><ContentPage /></ProtectedPage>} />
           <Route path="/dashboard" element={<Navigate to="/overview" replace />} />
           <Route path="/kanban" element={<Navigate to="/tasks" replace />} />
           <Route path="/calendar" element={<Navigate to="/tasks" replace />} />

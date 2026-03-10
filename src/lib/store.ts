@@ -1,4 +1,4 @@
-import { Task, Activity, Meeting, Revendedor, BusinessKPIs, APP_PASSWORD, ROLES_KEY, RevendedorCanal, RevendedorStatus, ProximaAcao, Interacao, VolumeHistorico } from "./types";
+import { Task, Activity, Meeting, Revendedor, BusinessKPIs, APP_PASSWORD, ROLES_KEY, RevendedorCanal, RevendedorStatus, ProximaAcao, Interacao, VolumeHistorico, ContentPost } from "./types";
 import { supabase, isSupabaseEnabled } from "./supabase";
 
 // ─── LocalStorage Keys (used as local cache) ───
@@ -852,6 +852,68 @@ export async function uploadFile(file: File, taskId: number): Promise<{ url: str
 
   const { data: urlData } = supabase.storage.from('attachments').getPublicUrl(path);
   return { url: urlData.publicUrl, name: file.name };
+}
+
+// ─── Content Posts ───
+
+const POSTS_KEY = "mrlion_posts";
+
+const SEED_POSTS: ContentPost[] = (() => {
+  const today = new Date();
+  const d = (offset: number) => {
+    const dt = new Date(today);
+    dt.setDate(dt.getDate() + offset);
+    return dt.toISOString().split("T")[0];
+  };
+  return [
+    { id: 50001, title: "Bastidores da produção", description: "Mostrar o processo de produção do Mr. Lion", platform: "Instagram" as const, type: "Reels" as const, creator: "MD Chefe", status: "agendado" as const, scheduledDate: d(1), scheduledTime: "18:00", caption: "Por trás de cada garrafa tem dedicação 🦁🔥", hashtags: ["#MrLion", "#Bastidores", "#Cachaça"], linkedTaskId: null, notes: "", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+    { id: 50002, title: "Receita de drink com Mr. Lion", description: "Drink tropical com Mr. Lion", platform: "Instagram" as const, type: "Reels" as const, creator: "MD Chefe", status: "aprovado" as const, scheduledDate: d(3), scheduledTime: "19:00", caption: "Drink perfeito pro verão ☀️🍹", hashtags: ["#MrLion", "#Drinks", "#Receita"], linkedTaskId: null, notes: "", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+    { id: 50003, title: "Enquete de sabores RTD", description: "Stories interativo para engajar sobre novos sabores", platform: "Instagram" as const, type: "Stories" as const, creator: "MD Chefe", status: "rascunho" as const, scheduledDate: d(5), scheduledTime: "12:00", caption: "", hashtags: ["#MrLion", "#RTD"], linkedTaskId: null, notes: "Usar enquete com 4 opções de sabor", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+    { id: 50004, title: "Foto do Kit PDV", description: "Post no feed com o novo Kit PDV completo", platform: "Instagram" as const, type: "Feed" as const, creator: "MD Chefe", status: "agendado" as const, scheduledDate: d(7), scheduledTime: "17:00", caption: "Leve a experiência Mr. Lion pro seu ponto de venda 🦁", hashtags: ["#MrLion", "#PDV", "#KitPDV", "#Revenda"], linkedTaskId: null, notes: "", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+    { id: 50005, title: "Depoimento revendedor", description: "Reels com depoimento de revendedor parceiro", platform: "Instagram" as const, type: "Reels" as const, creator: "MD Chefe", status: "rascunho" as const, scheduledDate: d(10), scheduledTime: "18:30", caption: "Quem conhece, recomenda 💛", hashtags: ["#MrLion", "#Parceiro", "#Revendedor"], linkedTaskId: null, notes: "Filmar com Carlos Henrique", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+    { id: 50006, title: "Carrossel: História da marca", description: "Carrossel contando a origem do Mr. Lion", platform: "Instagram" as const, type: "Carrossel" as const, creator: "MD Chefe", status: "aprovado" as const, scheduledDate: d(12), scheduledTime: "16:00", caption: "De uma ideia a uma marca que ruge 🦁", hashtags: ["#MrLion", "#Branding", "#História"], linkedTaskId: null, notes: "", createdBy: "MD Chefe", createdAt: now(), updatedAt: now() },
+  ];
+})();
+
+function initPosts() {
+  if (!localStorage.getItem(POSTS_KEY) || localStorage.getItem("posts_reset_v1") !== "1") {
+    localStorage.setItem(POSTS_KEY, JSON.stringify(SEED_POSTS));
+    localStorage.setItem("posts_reset_v1", "1");
+  }
+}
+
+export function getPosts(): ContentPost[] {
+  initIfNeeded();
+  initPosts();
+  return JSON.parse(localStorage.getItem(POSTS_KEY) || "[]");
+}
+
+export function createPost(data: Omit<ContentPost, "id" | "createdAt" | "updatedAt">): ContentPost {
+  const posts = getPosts();
+  const post: ContentPost = { ...data, id: getNextIdSync(), createdAt: now(), updatedAt: now() };
+  posts.push(post);
+  localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  notifyListeners();
+  return post;
+}
+
+export function updatePost(id: number, updates: Partial<ContentPost>): ContentPost | undefined {
+  const posts = getPosts();
+  const idx = posts.findIndex(p => p.id === id);
+  if (idx === -1) return undefined;
+  posts[idx] = { ...posts[idx], ...updates, updatedAt: now() };
+  localStorage.setItem(POSTS_KEY, JSON.stringify(posts));
+  notifyListeners();
+  return posts[idx];
+}
+
+export function deletePost(id: number): boolean {
+  const posts = getPosts();
+  const filtered = posts.filter(p => p.id !== id);
+  if (filtered.length === posts.length) return false;
+  localStorage.setItem(POSTS_KEY, JSON.stringify(filtered));
+  notifyListeners();
+  return true;
 }
 
 // ─── Export ───

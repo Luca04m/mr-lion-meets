@@ -123,7 +123,7 @@ export interface BusinessKPIs {
   custoEntrega: number;
 }
 
-export const TEAM_MEMBERS = ["Luca", "João", "Luhan", "Pedro", "Guilherme"];
+export const TEAM_MEMBERS = ["Luca", "João", "Luhan", "Pedro", "Guilherme", "MD Chefe"];
 
 export const AREAS = [
   "Operacional", "Comercial", "Marketing", "Produto", "Conteúdo",
@@ -199,6 +199,61 @@ export const INTERACAO_ICONS: Record<InteracaoTipo, string> = {
   "Email": "✉️",
   "Visita": "🏃",
   "Outro": "📌",
+};
+
+// ─── Content Post ───
+
+export type ContentPlatform = "Instagram" | "YouTube" | "TikTok" | "Twitter";
+export type ContentType = "Reels" | "Stories" | "Carrossel" | "Feed" | "Short" | "Live" | "Tweet";
+export type ContentStatus = "rascunho" | "aprovado" | "agendado" | "publicado";
+
+export interface ContentPost {
+  id: number;
+  title: string;
+  description: string;
+  platform: ContentPlatform;
+  type: ContentType;
+  creator: string;
+  status: ContentStatus;
+  scheduledDate: string;
+  scheduledTime: string;
+  caption: string;
+  hashtags: string[];
+  linkedTaskId: number | null;
+  notes: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CONTENT_CREATORS = ["MD Chefe", "Naju"];
+
+export const PLATFORM_COLORS: Record<ContentPlatform, string> = {
+  Instagram: "#E1306C",
+  YouTube: "#FF0000",
+  TikTok: "#00F2EA",
+  Twitter: "#1DA1F2",
+};
+
+export const CONTENT_TYPE_BY_PLATFORM: Record<ContentPlatform, ContentType[]> = {
+  Instagram: ["Reels", "Stories", "Carrossel", "Feed"],
+  YouTube: ["Short", "Live"],
+  TikTok: ["Reels"],
+  Twitter: ["Tweet"],
+};
+
+export const CONTENT_STATUS_COLORS: Record<ContentStatus, string> = {
+  rascunho: "#6B7280",
+  aprovado: "#3B82F6",
+  agendado: "#F59E0B",
+  publicado: "#22C55E",
+};
+
+export const CONTENT_STATUS_LABELS: Record<ContentStatus, string> = {
+  rascunho: "Rascunho",
+  aprovado: "Aprovado",
+  agendado: "Agendado",
+  publicado: "Publicado",
 };
 
 export const APP_PASSWORD = "Mrlion@2026";

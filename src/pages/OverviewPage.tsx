@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getTasks, getActivities, getRevendedores, getMeetings, exportTasksMarkdown, getUser } from "@/lib/store";
-import { Task, TaskStatus, TEAM_MEMBERS, STATUS_LABELS, STATUS_COLORS, Revendedor, REVENDEDOR_STATUS_COLORS, RevendedorStatus, Meeting } from "@/lib/types";
+import { getTasks, getActivities, getRevendedores, getMeetings, getPosts, exportTasksMarkdown, getUser } from "@/lib/store";
+import { Task, TaskStatus, TEAM_MEMBERS, STATUS_LABELS, STATUS_COLORS, Revendedor, REVENDEDOR_STATUS_COLORS, RevendedorStatus, Meeting, ContentPost, PLATFORM_COLORS, CONTENT_STATUS_COLORS, CONTENT_STATUS_LABELS } from "@/lib/types";
 import { format, formatDistanceToNow, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { TrendingUp, BarChart2, DollarSign, Package, Download, CheckCircle2, AlertTriangle, Clock, Zap, Calendar, Building2 } from "lucide-react";
+import { TrendingUp, BarChart2, DollarSign, Package, Download, CheckCircle2, AlertTriangle, Clock, Zap, Calendar, Building2, Megaphone } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RTooltip } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,7 @@ const OverviewPage = () => {
   const [activities, setActivities] = useState<ReturnType<typeof getActivities>>([]);
   const [revs, setRevs] = useState<Revendedor[]>([]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [contentPosts, setContentPosts] = useState<ContentPost[]>([]);
   const userName = getUser();
   const navigate = useNavigate();
 
@@ -53,6 +54,7 @@ const OverviewPage = () => {
     setActivities(getActivities());
     setRevs(getRevendedores());
     setMeetings(getMeetings());
+    setContentPosts(getPosts());
   };
   useEffect(() => { reload(); }, []);
   useRealtime(reload);
@@ -82,6 +84,11 @@ const OverviewPage = () => {
   const threeDaysLater = format(addDays(new Date(), 3), "yyyy-MM-dd");
   const upcomingTasks = tasks.filter(t => t.dueDate && t.dueDate >= todayStr && t.dueDate <= threeDaysLater && t.status !== "concluida").slice(0, 5);
 
+
+  const upcomingPosts = contentPosts
+    .filter(p => p.scheduledDate >= todayStr && p.status !== "publicado")
+    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
+    .slice(0, 5);
 
   const costTotal = COST_COMPOSITION.reduce((s, c) => s + c.value, 0);
 
@@ -329,6 +336,31 @@ const OverviewPage = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ═══ Próximas Postagens ═══ */}
+      <div className="bg-card rounded-lg border border-border p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold flex items-center gap-1.5"><Megaphone className="w-3.5 h-3.5 text-gold" /> Próximas Postagens</h3>
+          <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => navigate("/content")}>Ver cronograma</Button>
+        </div>
+        {upcomingPosts.length === 0 ? (
+          <p className="text-xs text-muted-foreground py-3 text-center">Nenhuma postagem agendada</p>
+        ) : (
+          <div className="space-y-1.5">
+            {upcomingPosts.map(p => (
+              <div key={p.id} className="flex items-center gap-2 text-xs p-2 rounded bg-secondary/20 border border-border cursor-pointer hover:border-gold/20" onClick={() => navigate("/content")}>
+                <span className="font-mono text-muted-foreground w-16 shrink-0">{p.scheduledDate.slice(5)}</span>
+                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: PLATFORM_COLORS[p.platform] }} />
+                <span className="flex-1 truncate">{p.title}</span>
+                <span className="text-[10px] text-muted-foreground">{p.creator}</span>
+                <Badge variant="outline" className="text-[8px] h-4" style={{ borderColor: `${CONTENT_STATUS_COLORS[p.status]}40`, color: CONTENT_STATUS_COLORS[p.status] }}>
+                  {CONTENT_STATUS_LABELS[p.status]}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ═══ BLOCO D — Atividade Recente ═══ */}
