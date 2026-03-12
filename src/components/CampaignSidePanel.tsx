@@ -1,23 +1,25 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Campaign, ContentPost, Task,
+  Campaign, ContentPost, Task, CampaignAd, CampaignVideo,
   CAMPAIGN_STATUS_COLORS, CAMPAIGN_STATUS_LABELS,
   CONTENT_STATUS_COLORS, CONTENT_STATUS_LABELS,
   STATUS_COLORS, STATUS_LABELS, PRIORITY_COLORS, PRIORITY_LABELS,
 } from "@/lib/types";
-import { updateTask } from "@/lib/store";
+import { updateTask, updateCampaign } from "@/lib/store";
 import {
   CalendarDays, FileText, CheckSquare, Pencil, Trash2,
   Megaphone, Tag, Radio, AlertCircle, Zap, StickyNote,
   Mic, Monitor, Camera, ExternalLink, Copy, ChevronDown, ChevronRight,
   BookOpen, ArrowRight, Play, Clock, ListChecks, Check,
-  Target, Users, BarChart3, ExternalLink as NavIcon,
+  Target, Users, BarChart3, ExternalLink as NavIcon, Save, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { format, isToday, isBefore, parseISO, differenceInDays, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -773,6 +775,10 @@ export function CampaignDetail({ campaign, linkedPosts, linkedTasks, onEdit, onD
   const [expandedVideo, setExpandedVideo] = useState<number | null>(null);
   const [tasks, setTasks] = useState<Task[]>(linkedTasks);
   const [activeTab, setActiveTab] = useState("overview");
+  const [editingAdId, setEditingAdId] = useState<number | null>(null);
+  const [editAdDraft, setEditAdDraft] = useState<CampaignAd | null>(null);
+  const [editingVideoId, setEditingVideoId] = useState<number | null>(null);
+  const [editVideoDraft, setEditVideoDraft] = useState<CampaignVideo | null>(null);
   const sc = CAMPAIGN_STATUS_COLORS[campaign.status];
 
   // Keep tasks in sync when linkedTasks prop changes
@@ -789,6 +795,43 @@ export function CampaignDetail({ campaign, linkedPosts, linkedTasks, onEdit, onD
 
   const handleNavigateTask = (task: Task) => {
     navigate(`/tasks?highlight=${task.id}`);
+  };
+
+  const handleEditAd = (ad: CampaignAd) => {
+    setEditingAdId(ad.id);
+    setEditAdDraft({ ...ad });
+  };
+
+  const handleSaveAd = () => {
+    if (!editAdDraft) return;
+    const newAds = campaign.ads!.map(a => a.id === editAdDraft.id ? editAdDraft : a);
+    updateCampaign(campaign.id, { ads: newAds });
+    setEditingAdId(null);
+    setEditAdDraft(null);
+  };
+
+  const handleCancelAd = () => {
+    setEditingAdId(null);
+    setEditAdDraft(null);
+  };
+
+  const handleEditVideo = (video: CampaignVideo) => {
+    setEditingVideoId(video.id);
+    setEditVideoDraft(JSON.parse(JSON.stringify(video)));
+    setExpandedVideo(video.id);
+  };
+
+  const handleSaveVideo = () => {
+    if (!editVideoDraft) return;
+    const newVideos = campaign.videos!.map(v => v.id === editVideoDraft.id ? editVideoDraft : v);
+    updateCampaign(campaign.id, { videos: newVideos });
+    setEditingVideoId(null);
+    setEditVideoDraft(null);
+  };
+
+  const handleCancelVideo = () => {
+    setEditingVideoId(null);
+    setEditVideoDraft(null);
   };
 
   const roteirosCount = (campaign.ads?.length ?? 0) + (campaign.videos?.length ?? 0);
@@ -993,48 +1036,116 @@ export function CampaignDetail({ campaign, linkedPosts, linkedTasks, onEdit, onD
             <div>
               <SectionTitle>Anúncios (Tráfego Pago)</SectionTitle>
               <div className="space-y-4">
-                {campaign.ads!.map(ad => (
-                  <div key={ad.id} className="bg-card border border-border rounded-xl overflow-hidden">
-                    <div className="px-5 py-3 bg-secondary/30 border-b border-border flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold text-sm text-foreground">{ad.title}</h3>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {ad.duration}</span>
-                          {ad.objective && <span className="text-[10px] text-gold/70 italic">{ad.objective}</span>}
+                {campaign.ads!.map(ad => {
+                  const isEditingAd = editingAdId === ad.id;
+                  const draft = isEditingAd ? editAdDraft! : ad;
+                  return (
+                    <div key={ad.id} className="bg-card border border-border rounded-xl overflow-hidden">
+                      <div className="px-5 py-3 bg-secondary/30 border-b border-border flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          {isEditingAd ? (
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                value={draft.title}
+                                onChange={e => setEditAdDraft(prev => prev ? { ...prev, title: e.target.value } : prev)}
+                                className="h-7 text-sm font-semibold bg-background/60 border-gold/30"
+                              />
+                              <Input
+                                value={draft.duration}
+                                onChange={e => setEditAdDraft(prev => prev ? { ...prev, duration: e.target.value } : prev)}
+                                className="h-7 text-xs w-24 bg-background/60 border-gold/30"
+                                placeholder="ex: até 15s"
+                              />
+                              <Input
+                                value={draft.objective ?? ""}
+                                onChange={e => setEditAdDraft(prev => prev ? { ...prev, objective: e.target.value } : prev)}
+                                className="h-7 text-xs bg-background/60 border-gold/30"
+                                placeholder="objetivo"
+                              />
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-semibold text-sm text-foreground">{ad.title}</h3>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-[10px] text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {ad.duration}</span>
+                                {ad.objective && <span className="text-[10px] text-gold/70 italic">{ad.objective}</span>}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                          {isEditingAd ? (
+                            <>
+                              <Button onClick={handleSaveAd} size="sm" variant="ghost" className="h-7 px-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+                                <Save className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button onClick={handleCancelAd} size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-foreground">
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button onClick={() => handleEditAd(ad)} size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-gold">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <div className="px-5 py-4">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Mic className="w-3.5 h-3.5 text-gold/60" />
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Script falado</span>
-                        </div>
-                        <p className="text-sm text-foreground leading-relaxed whitespace-pre-line italic">"{ad.spoken}"</p>
-                      </div>
-                      <div className="px-5 py-4 space-y-3">
-                        <div>
+                      <div className="grid md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
+                        <div className="px-5 py-4">
                           <div className="flex items-center gap-1.5 mb-2">
-                            <Monitor className="w-3.5 h-3.5 text-gold/60" />
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Texto na tela</span>
+                            <Mic className="w-3.5 h-3.5 text-gold/60" />
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Script falado</span>
                           </div>
-                          <div className="bg-secondary/40 rounded-lg px-3 py-2">
-                            {ad.screenText.split("\n").map((line, i) => (
-                              <p key={i} className={cn("font-mono", i === 0 ? "text-sm font-bold text-foreground" : "text-xs text-muted-foreground")}>{line}</p>
-                            ))}
-                          </div>
+                          {isEditingAd ? (
+                            <Textarea
+                              value={draft.spoken}
+                              onChange={e => setEditAdDraft(prev => prev ? { ...prev, spoken: e.target.value } : prev)}
+                              className="text-sm bg-background/60 border-gold/30 min-h-[80px] italic"
+                            />
+                          ) : (
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line italic">"{ad.spoken}"</p>
+                          )}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Camera className="w-3.5 h-3.5 text-gold/60" />
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Captação</span>
+                        <div className="px-5 py-4 space-y-3">
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-2">
+                              <Monitor className="w-3.5 h-3.5 text-gold/60" />
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Texto na tela</span>
+                            </div>
+                            {isEditingAd ? (
+                              <Textarea
+                                value={draft.screenText}
+                                onChange={e => setEditAdDraft(prev => prev ? { ...prev, screenText: e.target.value } : prev)}
+                                className="text-sm font-mono bg-background/60 border-gold/30 min-h-[70px]"
+                              />
+                            ) : (
+                              <div className="bg-secondary/40 rounded-lg px-3 py-2">
+                                {ad.screenText.split("\n").map((line, i) => (
+                                  <p key={i} className={cn("font-mono", i === 0 ? "text-sm font-bold text-foreground" : "text-xs text-muted-foreground")}>{line}</p>
+                                ))}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground">{ad.captacao}</p>
+                          <div>
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <Camera className="w-3.5 h-3.5 text-gold/60" />
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Captação</span>
+                            </div>
+                            {isEditingAd ? (
+                              <Textarea
+                                value={draft.captacao}
+                                onChange={e => setEditAdDraft(prev => prev ? { ...prev, captacao: e.target.value } : prev)}
+                                className="text-xs bg-background/60 border-gold/30 min-h-[60px]"
+                              />
+                            ) : (
+                              <p className="text-xs text-muted-foreground">{ad.captacao}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1047,33 +1158,74 @@ export function CampaignDetail({ campaign, linkedPosts, linkedTasks, onEdit, onD
               <div className="space-y-3">
                 {campaign.videos!.map(video => {
                   const isOpen = expandedVideo === video.id;
+                  const isEditingVideo = editingVideoId === video.id;
+                  const vDraft = isEditingVideo ? editVideoDraft! : video;
                   return (
                     <div key={video.id} className="bg-card border border-border rounded-xl overflow-hidden">
-                      <button onClick={() => setExpandedVideo(isOpen ? null : video.id)}
-                        className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-secondary/20 transition-colors">
-                        <div className="flex items-center gap-3">
+                      <div className="w-full px-5 py-3.5 flex items-center justify-between hover:bg-secondary/20 transition-colors">
+                        <button onClick={() => setExpandedVideo(isOpen ? null : video.id)} className="flex items-center gap-3 flex-1 text-left">
                           <div className="w-8 h-8 rounded-full bg-gold/10 border border-gold/20 flex items-center justify-center shrink-0">
                             <Play className="w-3.5 h-3.5 text-gold" />
                           </div>
-                          <div className="text-left">
+                          <div>
                             <p className="text-sm font-semibold text-foreground">{video.title}</p>
                             <p className="text-[10px] text-muted-foreground">{video.takes.length} takes · {fmtDate(video.date)}</p>
                           </div>
+                        </button>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isEditingVideo ? (
+                            <>
+                              <Button onClick={handleSaveVideo} size="sm" variant="ghost" className="h-7 px-2 text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10">
+                                <Save className="w-3.5 h-3.5" />
+                              </Button>
+                              <Button onClick={handleCancelVideo} size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-foreground">
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
+                          ) : (
+                            <Button onClick={() => handleEditVideo(video)} size="sm" variant="ghost" className="h-7 px-2 text-muted-foreground hover:text-gold">
+                              <Pencil className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground ml-1" /> : <ChevronRight className="w-4 h-4 text-muted-foreground ml-1" />}
                         </div>
-                        {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                      </button>
+                      </div>
                       {isOpen && (
                         <div className="border-t border-border">
-                          {video.takes.map((take, idx) => (
-                            <div key={take.take} className={cn("px-5 py-3.5 flex gap-4", idx < video.takes.length - 1 ? "border-b border-border/50" : "")}>
+                          {vDraft.takes.map((take, idx) => (
+                            <div key={take.take} className={cn("px-5 py-3.5 flex gap-4", idx < vDraft.takes.length - 1 ? "border-b border-border/50" : "")}>
                               <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 text-[10px] font-bold text-muted-foreground mt-0.5">
                                 {take.take}
                               </div>
                               <div className="flex-1">
-                                <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
-                                  <Camera className="w-3 h-3" /> {take.description}
-                                </p>
-                                <p className="text-sm text-foreground leading-relaxed italic">"{take.spoken}"</p>
+                                {isEditingVideo ? (
+                                  <div className="space-y-2">
+                                    <Input
+                                      value={vDraft.takes[idx].description}
+                                      onChange={e => {
+                                        const newTakes = vDraft.takes.map((t, i) => i === idx ? { ...t, description: e.target.value } : t);
+                                        setEditVideoDraft(prev => prev ? { ...prev, takes: newTakes } : prev);
+                                      }}
+                                      className="h-7 text-xs bg-background/60 border-gold/30"
+                                      placeholder="descrição da captação"
+                                    />
+                                    <Textarea
+                                      value={vDraft.takes[idx].spoken}
+                                      onChange={e => {
+                                        const newTakes = vDraft.takes.map((t, i) => i === idx ? { ...t, spoken: e.target.value } : t);
+                                        setEditVideoDraft(prev => prev ? { ...prev, takes: newTakes } : prev);
+                                      }}
+                                      className="text-sm bg-background/60 border-gold/30 min-h-[70px] italic"
+                                    />
+                                  </div>
+                                ) : (
+                                  <>
+                                    <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1">
+                                      <Camera className="w-3 h-3" /> {take.description}
+                                    </p>
+                                    <p className="text-sm text-foreground leading-relaxed italic">"{take.spoken}"</p>
+                                  </>
+                                )}
                               </div>
                             </div>
                           ))}
